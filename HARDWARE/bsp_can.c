@@ -1,4 +1,6 @@
 #include "bsp_can.h"
+#include "bsp_gpo.h"
+#include "bsp_back_wheel.h"
 
 void Config_Can(void)
 {
@@ -34,6 +36,7 @@ void Config_Can(void)
   CAN_StructInit(&CAN_InitStructure);
   //PCLK1（APB1） = HCLK（AHB）/ 4 = 168/4=42MHZ
   //波特率配置 = 42/(1+6+7)/6 = 500K
+	//Can 波特率配置潜规则 tBS1>=tBS2 tBS2>=1个CAN时钟周期  tBS2>=2tSJW
   CAN_InitStructure.CAN_SJW = CAN_SJW_1tq;
   CAN_InitStructure.CAN_BS1 = CAN_BS1_6tq;
   CAN_InitStructure.CAN_BS2 = CAN_BS2_7tq;
@@ -57,8 +60,8 @@ void Config_Can(void)
   CAN_FilterInitStructure.CAN_FilterScale = CAN_FilterScale_32bit;
   CAN_FilterInitStructure.CAN_FilterIdHigh = 0;
   CAN_FilterInitStructure.CAN_FilterIdLow =  0;     //IDE = 1扩展ID；RTR=0数据帧
-	CAN_FilterInitStructure.CAN_FilterMaskIdHigh = 0x0028;
-  CAN_FilterInitStructure.CAN_FilterMaskIdLow = 0x0004;
+	CAN_FilterInitStructure.CAN_FilterMaskIdHigh = 0;
+  CAN_FilterInitStructure.CAN_FilterMaskIdLow = 0;
   CAN_FilterInitStructure.CAN_FilterActivation = ENABLE;//使能过滤器
   CAN_FilterInit( &CAN_FilterInitStructure );
 	
@@ -71,22 +74,22 @@ void Config_Can(void)
   NVIC_Init( &NVIC_InitStructure );
 	
   /*************	*****缓冲区1-过滤器1****** *************/
-	CAN_FilterInitStructure.CAN_FilterNumber = 1;//1号过滤器,0~13
-  CAN_FilterInitStructure.CAN_FilterFIFOAssignment = CAN_Filter_FIFO1;//过滤器关联到0号先进先出缓冲区，共两个缓冲区，每个缓冲区有3个邮箱.
-  CAN_FilterInitStructure.CAN_FilterMode = CAN_FilterMode_IdMask;//CAN_FilterMode_IdMask;//屏蔽模式，屏蔽寄存器为1的相应位必须匹配。
-  CAN_FilterInitStructure.CAN_FilterScale = CAN_FilterScale_32bit;
-  CAN_FilterInitStructure.CAN_FilterIdHigh = 0;
-  CAN_FilterInitStructure.CAN_FilterIdLow =  0;//IDE = 1扩展ID；RTR=0数据帧
-	CAN_FilterInitStructure.CAN_FilterMaskIdHigh = 0;
-  CAN_FilterInitStructure.CAN_FilterMaskIdLow = 0;
-  CAN_FilterInitStructure.CAN_FilterActivation = ENABLE;//使能过滤器
-  CAN_FilterInit( &CAN_FilterInitStructure );
+//	CAN_FilterInitStructure.CAN_FilterNumber = 1;//1号过滤器,0~13
+//  CAN_FilterInitStructure.CAN_FilterFIFOAssignment = CAN_Filter_FIFO1;//过滤器关联到0号先进先出缓冲区，共两个缓冲区，每个缓冲区有3个邮箱.
+//  CAN_FilterInitStructure.CAN_FilterMode = CAN_FilterMode_IdMask;//CAN_FilterMode_IdMask;//屏蔽模式，屏蔽寄存器为1的相应位必须匹配。
+//  CAN_FilterInitStructure.CAN_FilterScale = CAN_FilterScale_32bit;
+//  CAN_FilterInitStructure.CAN_FilterIdHigh = 0;
+//  CAN_FilterInitStructure.CAN_FilterIdLow =  0;//IDE = 1扩展ID；RTR=0数据帧
+//	CAN_FilterInitStructure.CAN_FilterMaskIdHigh = 0;
+//  CAN_FilterInitStructure.CAN_FilterMaskIdLow = 0;
+//  CAN_FilterInitStructure.CAN_FilterActivation = ENABLE;//使能过滤器
+//  CAN_FilterInit( &CAN_FilterInitStructure );
 
-	NVIC_InitStructure.NVIC_IRQChannel = CAN1_RX1_IRQn;//can1的FIFO0中断
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-  NVIC_Init( &NVIC_InitStructure );
+//	NVIC_InitStructure.NVIC_IRQChannel = CAN1_RX1_IRQn;//can1的FIFO0中断
+//  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+//  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+//  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//  NVIC_Init( &NVIC_InitStructure );
 
 //	CAN_FilterInitStructure.CAN_FilterNumber = 2;//1号过滤器,0~13
 //  CAN_FilterInitStructure.CAN_FilterFIFOAssignment = CAN_Filter_FIFO1;//过滤器关联到0号先进先出缓冲区，共两个缓冲区，每个缓冲区有3个邮箱.
@@ -102,6 +105,36 @@ void Config_Can(void)
   CAN_ITConfig(CAN1,CAN_IT_FMP1,ENABLE);//使能1号缓冲区的接收中断
 }
 
+bool mj_can_sent_to_NAVI()
+{	
+	CanTxMsg can_tx_msg;
+	u8 TransmitMailbox ;
+	u8 retry;
+
+	can_tx_msg.StdId = 0;
+	can_tx_msg.ExtId = 15;		 			// 使用扩展帧标识符
+	can_tx_msg.IDE = CAN_ID_EXT;    // 扩展帧
+	can_tx_msg.RTR = CAN_RTR_DATA;	// 数据帧
+	can_tx_msg.DLC = 7;		     		  // 发送数据长度
+	can_tx_msg.Data[0] = 3;
+	can_tx_msg.Data[1] = 0xAA;
+	can_tx_msg.Data[2] = 0;
+	can_tx_msg.Data[3] = motor_encoder.single_Encoder[0];
+	can_tx_msg.Data[4] = motor_encoder.single_Encoder[1];
+	can_tx_msg.Data[5] = motor_encoder.single_Encoder[2];
+	can_tx_msg.Data[6] = motor_encoder.single_Encoder[3];
+//	can_tx_msg.Data[7] = 0;
+	for(retry=0;retry<3;retry++)
+	{	
+		TransmitMailbox = CAN_Transmit(CAN1,&can_tx_msg); 					// 通过CAN BUS 发送数据  
+		if(TransmitMailbox!=CAN_TxStatus_NoMailBox) break;
+		mj_delay_us(200);
+	}
+	if(TransmitMailbox!=CAN_TxStatus_NoMailBox)
+		return true;
+	return false;
+}
+
 static CanRxMsg f_can_rx_msg_fifo0;
 CanRxMsg * can_get_msg_fifo0()
 {
@@ -109,7 +142,8 @@ CanRxMsg * can_get_msg_fifo0()
 }
 void CAN1_RX0_IRQHandler(void)
 {
-	OS_ERR err;
+	static OS_ERR err;
+	OSIntEnter();
 	/*1.清除数组*/
 	memset(&f_can_rx_msg_fifo0, 0, sizeof(f_can_rx_msg_fifo0));
 	/*2.从FIFO读取数据*/
@@ -118,6 +152,7 @@ void CAN1_RX0_IRQHandler(void)
 	OSFlagPost(&IRQ_EVENTs,EVENTS_CANRX_FIFO0,OS_OPT_POST_FLAG_SET,&err);	
 	/*4.清除中断标志位*/
 	CAN_ClearITPendingBit( CAN1, CAN_IT_FMP0 );//清除挂起中断	因为一旦往FIFO存入1个报文，硬件就会更新FMP[1:0]位，
+	OSIntExit();
 }
 
 static CanRxMsg f_can_rx_msg_fifo1;
@@ -127,9 +162,11 @@ CanRxMsg * can_get_msg_fifo1()
 }
 void CAN1_RX1_IRQHandler(void)//预留
 {
-	OS_ERR err;
+	static OS_ERR err;
+	OSIntEnter();
 	memset(&f_can_rx_msg_fifo1, 0, sizeof(f_can_rx_msg_fifo1));
   CAN_Receive( CAN1, CAN_FIFO1, &f_can_rx_msg_fifo1);
 	OSFlagPost(&IRQ_EVENTs,EVENTS_CANRX_FIFO0,OS_OPT_POST_FLAG_SET,&err);	
   CAN_ClearITPendingBit( CAN1, CAN_IT_FMP1 );//清除挂起中断	因为一旦往FIFO存入1个报文，硬件就会更新FMP[1:0]位，
+	OSIntExit();
 }

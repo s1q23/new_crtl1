@@ -15,7 +15,7 @@ typedef struct _usart_pc_buffer
 }usart_pc_buffer;
 
 void usart_pc_init(uint32_t baud);
-void usart_pc_send(char* buffer);
+void usart_pc_send(char* buffer,unsigned short length);
 usart_pc_buffer *PcCom_get_data(void);
 
 #endif

@@ -18,6 +18,7 @@
 #define EXTI_BUMPER_PreemptionPriority						0
 #define EXTI_BUMPER_SubPriority										0
 #define EXTI_BUMPER_GET_PIN_VALUE									(GPIO_BUMPER->IDR & PIN_BUMPER)
+#define Crash_State                               PHin(7)
 
 //¼±Í£¿ª¹Ø£ºPXx scram button 
 #define GPIO_SCRAM_BUTTON													GPIOX
@@ -48,14 +49,33 @@
 #define GPIO_SHAKE							GPIOH
 #define GPIO_SHAKE_CLOCK				RCC_AHB1Periph_GPIOH
 #define PIN_SHAKE								GPIO_Pin_6
-//²£Á§ÆÆËé£ºPH8 slass 
-#define GPIO_SLASS							GPIOH
-#define GPIO_SLASS_CLOCK				RCC_AHB1Periph_GPIOH
-#define PIN_SLASS								GPIO_Pin_8
+
+//·À×²Ìõ£ºPH7 Crash
+#define GPIO_CRASH							GPIOH
+#define GPIO_CRASH_CLOCK				RCC_AHB1Periph_GPIOH
+#define PIN_CRASH								GPIO_Pin_7
+//²£Á§ÆÆËé£ºPH8 glass 
+#define GPIO_GLASS							GPIOH
+#define GPIO_GLASS_CLOCK				RCC_AHB1Periph_GPIOH
+#define PIN_GLASS								GPIO_Pin_8
+//ÑÌÎí±¨¾¯£ºPD8
+#define GPIO_SMOG               GPIOD
+#define GPIO_SMOG_CLOCK         RCC_AHB1Periph_GPIOD
+#define PIN_SMOG                GPIO_Pin_8
+//¼±Í£°´Å¥
+#define GPIO_EMGBTN              GPIOD
+#define GPIO_EMGBTN_CLOCK        RCC_AHB1Periph_GPIOD
+#define PIN_EMGBTN               GPIO_Pin_9
+
+//Ë®Î»´«¸ÐÆ÷
+#define GPIO_WATER              GPIOD
+#define GPIO_WATER_CLOCK        RCC_AHB1Periph_GPIOD
+#define PIN_WATER               GPIO_Pin_12
+
 
 void Config_GPIO_Encoder_TRD_MA(void);
 float get_front_angel(void);
 void Config_GPIO_Input(void);
-void Config_GPIO_EXTI(void);
+void Config_GPIO_EXTI_BUMPER(void);
 
 #endif

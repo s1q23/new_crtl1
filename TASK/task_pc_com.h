@@ -42,7 +42,7 @@ typedef enum
 	PC_CMD_CORD_SET_EMG_BRACK	,				          // RMS紧急制动, PC -> RMS
 	PC_CMD_CORD_SET_F_WHEEL_TURN,				        // 上位机控制小车前轮转向
 	PC_CMD_CORD_SET_B_WHEEL_SPEED,				      // 上位机控制小车后轮速度
-	PC_CMD_CORD_SET_FRONT_LIGHT,				        // 上位机控制前大灯
+	PC_CMD_CORD_SET_FRONT_LIGHT = 0x85,				  // 上位机控制前大灯
 	PC_CMD_CORD_SET_BACK_LIGHT,				          // 后大灯
 	PC_CMD_CORD_SET_BRAKE_LIGHT,				        // 刹车灯
 	PC_CMD_CORD_SET_TURN_LEFT_LIGHT,				    // 左转向
@@ -54,23 +54,22 @@ typedef enum
 	PC_CMD_CORD_SET_SYS_MODE,				            // 0x8D设定当前模式
 	PC_CMD_CORD_SET_YUNTAI,				              // 0x8E 云台
 	PC_CMD_CORD_SET_DIRECTION_SPEED,				    // 0x8F	上位机控制小车转向与后轮速度
-	PC_CMD_CORD_SET_HIGH_DECIBEL_SPEAKER,       
+	PC_CMD_CORD_SET_HIGH_DECIBEL_SPEAKER=0x90,  // 高分贝喇叭     
 	PC_CMD_CORD_SET_BRIGHT_LIGHT ,              // 0X91 上位机控制强光灯和红外补光灯
 	PC_CMD_CORD_SET_INFRARED_LIGHT,             // 0X92 上位机控制强光灯和红外补光灯
 	PC_CMD_CORD_SET_SPEAKER_MUTE,               // 0X93 上位机控制高音广播静音
 	PC_CMD_CORD_SET_NAVI_BRIGHT_LIGHT,          // 0X94 上位机控制导航强光灯
 
-	PC_CMD_CODE_MAX_NO,
+	PC_CMD_CODE_MAX_NO,                         // 最大值，始终放在最后   
 
 }pc_cmd_type;
 
-
-
-typedef handler_result_t (*ipc_cmd_handler_event)(pc_cmd_t *f_ipc_control); 
-typedef struct _can_cmd_handler_t {
-	ipc_cmd_type_t cmd;
-	ipc_cmd_handler_event   event;
-}ipc_cmd_handler_t;
+typedef  handler_result_t (*pc_cmd_handler_event)(pc_cmd_t *in_out_pcmd);
+typedef struct _pc_cmd_handler_t 
+{
+	pc_cmd_type              	cmd;
+	pc_cmd_handler_event        event;
+}pc_cmd_handler_t;
 
 #define PC_CMD_INVALID(c)          ((c >= PC_CMD_CORD_SENT_RMS_STATE) && (c < PC_CMD_CODE_MAX_NO))
 #define IR313_CMD_INVALID(c)       ((c >= 0x27) && (c < 0x30))  
@@ -110,9 +109,28 @@ typedef __packed  struct _rms_ctl {
 	u8	yuntai_pos:1;		                         // 云台控制, 0:降到最低点, 1升到最高点
 	u8	rms_mode:1;			                         // 模式, 0:自动模式，1:手动模式, bit6
 	u8  talk_back:1;		                         // 语音对讲 0:关闭，1：打开 ,  byte最高位,bit7	
-
 }rms_ctl_t, *prms_ctl_t;
 
+typedef __packed struct _sensor_ctl 
+{
+	u8  high_dec_speaker:1;	// ???? 0:??,1:?? , byte ???,bit0
+	u8	light_alarm:1;		// ???	0:??,1:??	, bit1
+	u8	right_light:1;		// ????, byte????	, bit2
+	u8	left_light:1;		// ????
+	u8	brake_light:1;		// ???
+	u8	back_light:1;		// ???
+	u8	front_light:2;		// ??		00:??, 01:??, 10: ??	, byte???,bit7,bit6
+
+	u8  retain:7;			// ??
+	u8  talk_back:1;		// ???? 0:??,1:?? ,  byte???,bit7	
+}sensor_ctl_t, *psensor_ctl_t;
+
+typedef struct _driver_ctl {
+	s8	angle;	
+	s16	speed;
+	u8  retain:7;
+	u8	rms_mode:1;
+}driver_ctl_t, *pdriver_ctl_t;
 // 机器人紧急制动控制 PC->RMS， 命令码0x82
 typedef __packed struct _rms_emg_brake {
 	u8	ctl_mod;			                           // 控制模式, 0x00 停止所有机器人,0x01启动机器人
@@ -226,45 +244,51 @@ extern CPU_STK PC_COMRx_TASK_STK[PC_COMRx_STK_SIZE];
 void pc_comRx_task(void *p_arg);               
 
 /*pc com tx task 相关配置，定时向PC发送全状态信息*/
-#define PC_COMTx_STK_SIZE 		256
+#define PC_COMTx_STK_SIZE 		512
 
 extern rms_state_t rms_state; 				         // 全状态
 
 extern OS_TCB  PcComTxTaskTCB;                        
 extern CPU_STK PC_COMTx_TASK_STK[PC_COMTx_STK_SIZE];
 
-handler_result_t pc_cmd_handler_set_front_light(pc_cmd_t *f_ipc_control);// 工控机设置前灯
-handler_result_t pc_cmd_handler_set_back_light(pc_cmd_t *f_ipc_control);// 工控机设置后灯
-handler_result_t pc_cmd_handler_set_break_light(pc_cmd_t *f_ipc_control);// 工控机设置刹车灯
-handler_result_t pc_cmd_handler_set_alarm_light(pc_cmd_t *f_ipc_control);// 工控机设置警灯
-handler_result_t pc_cmd_handler_set_search_light(pc_cmd_t *f_ipc_control);// 工控机设置探照灯
-handler_result_t pc_cmd_handler_set_highspeaker(pc_cmd_t *f_ipc_control);// 工控机设置高音喇叭
-handler_result_t pc_cmd_handler_set_left_light(pc_cmd_t *f_ipc_control);// 工控机设置左转灯
-handler_result_t pc_cmd_handler_set_right_light(pc_cmd_t *f_ipc_control);// 工控机设置右转灯
-handler_result_t pc_cmd_handler_set_tracking(pc_cmd_t *f_ipc_control);// 工控机设置寻迹
-handler_result_t pc_cmd_handler_set_front_speed(pc_cmd_t *f_ipc_control);// 工控机设置前轮速度
-handler_result_t pc_cmd_handler_set_back_speed(pc_cmd_t *f_ipc_control);// 工控机设置后轮速度
-handler_result_t pc_cmd_handler_set_front_angle(pc_cmd_t *f_ipc_control);// 工控机设置前轮角度
-handler_result_t pc_cmd_handler_set_front_and_back_speed(pc_cmd_t *f_ipc_control);// 工控机设置前轮和后轮速度
-handler_result_t pc_cmd_handler_set_frontangle_and_backspeed(pc_cmd_t *f_ipc_control);// 工控机设置前轮角度和后轮速度
-
-handler_result_t pc_cmd_handler_get_front_angle(pc_cmd_t *f_ipc_control);//获取前轮角度
-handler_result_t pc_cmd_handler_get_front_speed(pc_cmd_t *f_ipc_control);//获取前轮速度
-handler_result_t pc_cmd_handler_get_back_speed(pc_cmd_t *f_ipc_control);//获取后轮速度
-handler_result_t pc_cmd_handler_get_temperature(pc_cmd_t *f_ipc_control);//获取温度
-handler_result_t pc_cmd_handler_get_humidity(pc_cmd_t *f_ipc_control);//获取湿度
-handler_result_t pc_cmd_handler_get_fog(pc_cmd_t *f_ipc_control);//获取烟雾
-handler_result_t pc_cmd_handler_get_co(pc_cmd_t *f_ipc_control);//获取一氧化碳
-handler_result_t pc_cmd_handler_get_batc(pc_cmd_t *f_ipc_control);//获取电池电压
-handler_result_t pc_cmd_handler_get_batv(pc_cmd_t *f_ipc_control);//获取电池电流
-handler_result_t pc_cmd_handler_get_waterlevel(pc_cmd_t *f_ipc_control);//获取水位
-handler_result_t pc_cmd_handler_get_shake(pc_cmd_t *f_ipc_control);//获取震动
-handler_result_t pc_cmd_handler_get_glasscrash(pc_cmd_t *f_ipc_control);//获取玻璃破碎
-handler_result_t pc_cmd_handler_get_mode(pc_cmd_t *f_ipc_control);//获取模式
-handler_result_t pc_cmd_handler_get_ultrasonic(pc_cmd_t *f_ipc_control);//获取超声波
-
 
 void pc_comRx_task(void *p_arg);
 void pc_comTx_task(void *p_arg);
 
+
+
+
+
+
+
+
+
+
+
+
+
+handler_result_t pc_cmd_handler_sync(pc_cmd_t *in_out_pcmd);            	     
+handler_result_t pc_cmd_handler_sent_rms_state(pc_cmd_t *in_out_pcmd);          
+handler_result_t pc_cmd_handler_sent_talkback_req(pc_cmd_t *in_out_pcmd); 
+handler_result_t pc_cmd_handler_set_navigation(pc_cmd_t *in_out_pcmd);         
+handler_result_t pc_cmd_handler_set_rms_control(pc_cmd_t *in_out_pcmd); 		     
+handler_result_t pc_cmd_handler_set_emergency_brake(pc_cmd_t *in_out_pcmd);      
+handler_result_t pc_cmd_handler_set_f_wheel_turn(pc_cmd_t *in_out_pcmd); 	       
+handler_result_t pc_cmd_handler_set_b_wheel_speed(pc_cmd_t *in_out_pcmd); 	     
+handler_result_t pc_cmd_handler_set_front_light(pc_cmd_t *in_out_pcmd); 	       
+handler_result_t pc_cmd_handler_set_back_light(pc_cmd_t *in_out_pcmd); 		       
+handler_result_t pc_cmd_handler_set_brake_light(pc_cmd_t *in_out_pcmd); 	       
+handler_result_t pc_cmd_handler_set_turn_left_light(pc_cmd_t *in_out_pcmd);      
+handler_result_t pc_cmd_handler_set_turn_right_light(pc_cmd_t *in_out_pcmd);     
+handler_result_t pc_cmd_handler_set_sound_light_alarm(pc_cmd_t *in_out_pcmd);    
+handler_result_t pc_cmd_handler_set_upl_state(pc_cmd_t *in_out_pcmd);            
+handler_result_t pc_cmd_handler_set_talkback_module(pc_cmd_t *in_out_pcmd);      
+handler_result_t pc_cmd_handler_set_sys_mode(pc_cmd_t *in_out_pcmd); 		         
+handler_result_t pc_cmd_handler_set_yuntai(pc_cmd_t *in_out_pcmd); 			         
+handler_result_t pc_cmd_handler_set_direction_speed(pc_cmd_t *in_out_pcmd);      
+handler_result_t pc_cmd_handler_set_high_decibel_speaker(pc_cmd_t *in_out_pcmd); 
+handler_result_t pc_cmd_handler_set_bright_light(pc_cmd_t *in_out_pcmd);         
+handler_result_t pc_cmd_handler_set_infrared_light(pc_cmd_t *in_out_pcmd);      
+handler_result_t pc_cmd_handler_set_speaker_mute(pc_cmd_t *in_out_pcmd);         
+handler_result_t pc_cmd_handler_set_navi_bright_light(pc_cmd_t *in_out_pcmd); 
 #endif

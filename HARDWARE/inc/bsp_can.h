@@ -21,11 +21,8 @@
 #define KEYA_S_STOPOFF            6     //紧急停机释放
 #define KEYA_S_SPEED              7     //设置速度
 
-
-
-
 void Config_Can(void);
 CanRxMsg * can_get_msg_fifo0(void);
 CanRxMsg * can_get_msg_fifo1(void);
-
+bool mj_can_sent_to_NAVI(void);
 #endif

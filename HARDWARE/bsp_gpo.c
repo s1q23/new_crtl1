@@ -14,37 +14,38 @@ void LED_Init(void)
 	GPIO_InitStructure.GPIO_PuPd=GPIO_PuPd_NOPULL;  //ÉÏÀ­Êä³ö
 	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_100MHz; //¸ßËÙGPIO
 	GPIO_Init(GPIOI,&GPIO_InitStructure);
+	LED1=1;LED2=1;LED3=1;LED4=1;
 }
 
 //¼ÌµçÆ÷¿ØÖÆ¹Ü½ÅÅäÖÃº¯Êý
 void Config_GPIO_Control_Relay()
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
-	//Ô¤Áô
-	RCC_AHB1PeriphClockCmd(GPIO_RESERVE_1_CLOCK | GPIO_RESERVE_2_CLOCK | GPIO_RESERVE_3_CLOCK | GPIO_RESERVE_4_CLOCK, ENABLE);
+	//Ç¿¹âµÆ   ¹ã²¥¾²Òô  µ¼º½Ì½ÕÕµÆ 
+	RCC_AHB1PeriphClockCmd(GPIO_BRINGHTLIGHT_CLOCK | GPIO_SPEAKERMUTE_CLOCK | GPIO_NAVIBRIGHT_CLOCK | GPIO_SMOGSENSOR_CLOCK, ENABLE);
 	//³¬Éù²¨  µç´ÅÉ² ¸ßÒôÀ®°È ¶Ô½²Ä£¿é
 	RCC_AHB1PeriphClockCmd(GPIO_ULTRASONIC_CLOCK | GPIO_ELECTR_BRAKE_CLOCK | GPIO_TWEETER_CLOCK | GPIO_TALKBACK_CLOCK, ENABLE);
 	//Ç°µÆ Î²µÆ ×ó×ªµÆ ÓÒ×ªµÆ 
 	RCC_AHB1PeriphClockCmd(GPIO_HEADLIGHT_CLOCK | GPIO_TAILLIGHT_CLOCK | GPIO_LEFTLIGHT_CLOCK | GPIO_RIGHTLIGHT_CLOCK, ENABLE);
-	//É²³µµÆ ¾¯µÆ Ì½ÕÕµÆ µçÔ´Ö¸Ê¾µÆ
-	RCC_AHB1PeriphClockCmd(GPIO_STOPLIGHT_CLOCK | GPIO_ALARM_LAMP_CLOCK | GPIO_SEARCHLIGHT_CLOCK | GPIO_POWER_LIGHT_CLOCK, ENABLE);
+	//É²³µµÆ ¾¯µÆ ºìÍâ²¹¹âµÆ µçÔ´Ö¸Ê¾µÆ
+	RCC_AHB1PeriphClockCmd(GPIO_STOPLIGHT_CLOCK | GPIO_ALARM_LAMP_CLOCK | GPIO_INFRAREDLIGHT_CLOCK | GPIO_POWER_LIGHT_CLOCK|GPIO_POWERLED_CLOCK, ENABLE);
 	//¹Ü½ÅÅäÖÃ
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;//GPIO_OType_OD;//¿ªÂ©+ÉÏÀ­ µÍ¹¦ºÄ
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;//GPIO_PuPd_UP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	//Ô¤Áô
-	GPIO_InitStructure.GPIO_Pin = PIN_RESERVE_1;
-	GPIO_Init(GPIO_RESERVE_1,&GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = PIN_BRINGHTLIGHT;
+	GPIO_Init(GPIO_BRINGHTLIGHT,&GPIO_InitStructure);
 	
-	GPIO_InitStructure.GPIO_Pin = PIN_RESERVE_2;
-	GPIO_Init(GPIO_RESERVE_2,&GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = PIN_SPEAKERMUTE;
+	GPIO_Init(GPIO_SPEAKERMUTE,&GPIO_InitStructure);
 	
-	GPIO_InitStructure.GPIO_Pin = PIN_RESERVE_3;
-	GPIO_Init(GPIO_RESERVE_3,&GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = PIN_NAVIBRIGHT;
+	GPIO_Init(GPIO_NAVIBRIGHT,&GPIO_InitStructure);
 	
-	GPIO_InitStructure.GPIO_Pin = PIN_RESERVE_4;
-	GPIO_Init(GPIO_RESERVE_4,&GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = PIN_SMOGSENSOR;
+	GPIO_Init(GPIO_SMOGSENSOR,&GPIO_InitStructure);
 	//³¬Éù²¨  µç´ÅÉ² ¸ßÒôÀ®°È ¶Ô½²Ä£¿é
 	GPIO_InitStructure.GPIO_Pin = PIN_ULTRASONIC;
 	GPIO_Init(GPIO_ULTRASONIC,&GPIO_InitStructure);
@@ -76,16 +77,23 @@ void Config_GPIO_Control_Relay()
 	GPIO_InitStructure.GPIO_Pin = PIN_ALARM_LAMP;
 	GPIO_Init(GPIO_ALARM_LAMP,&GPIO_InitStructure);
 	
-	GPIO_InitStructure.GPIO_Pin = PIN_SEARCHLIGHT;
-	GPIO_Init(GPIO_SEARCHLIGHT,&GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = PIN_INFRAREDLIGHT;
+	GPIO_Init(GPIO_INFRAREDLIGHT,&GPIO_InitStructure);
 	
 	GPIO_InitStructure.GPIO_Pin = PIN_POWER_LIGHT;
 	GPIO_Init(GPIO_POWER_LIGHT,&GPIO_InitStructure);
-	
+	//PB9 ×öÊ²Ã´ÓÃµÄ£¿
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
 	GPIO_Init(GPIOB,&GPIO_InitStructure);
 	
+	GPIO_InitStructure.GPIO_Pin = PIN_POWERLED;
+	GPIO_Init(GPIO_POWERLED,&GPIO_InitStructure);
+	
+	pPowerLedGreen=1;
+	pPowerLedRed=0;
+	SMOGSENSOR_ON;
 }
+
 void Config_GPIO_Control_485()
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
@@ -117,7 +125,7 @@ void Config_GPIO_Control_enc28j60_res()
 }
 
 
-//µç´ÅÉ²¼ÌµçÆ÷¿ØÖÆ
+//µç´ÅÉ²¼ÌµçÆ÷¿ØÖÆ,µç´ÅÉ²ÒÑ¾­²»ÓÃ¼ÌµçÆ÷¿ØÖÆÁË
 void Relay_embreak( u8 f_set, u8 f_priority )  //ÓÅÏÈ¼¶ÎÊÌâºÜ´ó¡£¡£¡£¡£¡£¡£ÒÔºóµÃ¸Ä
 {
 	if( f_set == RELAY_OFF )
@@ -132,13 +140,24 @@ void Relay_embreak( u8 f_set, u8 f_priority )  //ÓÅÏÈ¼¶ÎÊÌâºÜ´ó¡£¡£¡£¡£¡£¡£ÒÔºóµ
 //Ç°µÆ¼ÌµçÆ÷¿ØÖÆ
 void Relay_frontlight( u8 f_set, u8 f_priority )
 {
-	if( f_set == RELAY_OFF )
+	static OS_ERR err;
+	if(f_set==RELAY_OFF)
 	{
+		OSTmrStop(&TmrFrontLight,OS_OPT_TMR_NONE,0,&err);
 		Headlight_OFF;
+		rms_state.front_light=RELAY_OFF;
+	}
+	else if(f_set==RELAY_ON)
+	{
+		OSTmrStop(&TmrFrontLight,OS_OPT_TMR_NONE,0,&err);
+		Headlight_ON;
+		rms_state.front_light=RELAY_ON;
 	}
 	else
 	{
-		Headlight_ON;
+		LEFTLIGHT_ON;
+		OSTmrStart(&TmrFrontLight,&err);
+		rms_state.front_light=RELAY_FLASH;
 	}
 }
 //ºóµÆ¼ÌµçÆ÷¿ØÖÆ
@@ -152,19 +171,23 @@ void Relay_backlight( u8 f_set, u8 f_priority )
 	{
 		TAILLIGHT_ON;
 	}
+	rms_state.back_light=f_set;
 }
 
 //É²³µµÆ¼ÌµçÆ÷¿ØÖÆ
-void Relay_breaklight( u8 f_set, u8 f_priority )
+void Relay_brakelight( u8 f_set, u8 f_priority )
 {
 	if( f_set == RELAY_OFF )
 	{
 		STOPLIGHT_OFF;
+		elecmbile_status.brakelight_status=0;
 	}
 	else
 	{
 		STOPLIGHT_ON;
+		elecmbile_status.brakelight_status=1;
 	}
+	rms_state.brake_light=f_set;
 }
 
 //¾¯µÆ¼ÌµçÆ÷¿ØÖÆ
@@ -178,17 +201,18 @@ void Relay_alarmlight( u8 f_set, u8 f_priority )
 	{
 		ALARM_LAMP_ON;
 	}
+	rms_state.light_alarm=f_set;
 }
 //Ì½ÕÕµÆ¼ÌµçÆ÷¿ØÖÆ
-void Relay_searchlight( u8 f_set, u8 f_priority )
+void Relay_infraredlight( u8 f_set, u8 f_priority )
 {
 	if( f_set == RELAY_OFF )
 	{
-		SEARCHLIGHT_OFF;
+		INFRAREDLIGHT_OFF;
 	}
 	else
 	{
-		SEARCHLIGHT_ON;
+		INFRAREDLIGHT_ON;
 	}
 }
 //µçÔ´Ö¸Ê¾µÆ¼ÌµçÆ÷¿ØÖÆ
@@ -203,6 +227,57 @@ void Relay_powerlight( u8 f_set, u8 f_priority )
 		POWER_LIGHT_ON;
 	}
 }
+//¶Ô½²Ä£¿é¼ÌµçÆ÷¿ØÖÆ
+void Relay_talkback_module(u8 f_set,u8 f_priority)
+{
+	if(f_set==RELAY_OFF)
+	{
+		TALKBACK_OFF;
+	}
+	else
+	{
+		TALKBACK_ON;
+	}
+}
+
+//Ç¿¹âµÆ¼ÌµçÆ÷¿ØÖÆ
+void Relay_brightlight( u8 f_set, u8 f_priority )
+{
+	if( f_set == RELAY_OFF )
+	{
+		BRINGHTLIGHT_OFF;
+	}
+	else
+	{
+		BRINGHTLIGHT_ON;
+	}
+}
+
+//¹ã²¥¾²Òô¼ÌµçÆ÷¿ØÖÆ
+void Relay_speakermute( u8 f_set, u8 f_priority )
+{
+	if( f_set == RELAY_OFF )
+	{
+		SPEAKERMUTE_OFF;
+	}
+	else
+	{
+		SPEAKERMUTE_ON;
+	}
+}
+
+//µ¼º½Ì½ÕÕµÆ¼ÌµçÆ÷¿ØÖÆ
+void Relay_navibright( u8 f_set, u8 f_priority )
+{
+	if(f_set == RELAY_OFF)
+	{
+		NAVIBRIGHT_OFF;
+	}
+	else
+	{
+		NAVIBRIGHT_ON;
+	}
+}
 //¸ßÒôÀ®°È¼ÌµçÆ÷¿ØÖÆ
 void Relay_highspeaker( u8 f_set, u8 f_priority )
 {
@@ -215,49 +290,56 @@ void Relay_highspeaker( u8 f_set, u8 f_priority )
 		TWEETER_ON;
 	}
 }
+
 //×ó×ªµÆ¼ÌµçÆ÷¿ØÖÆ 0 ¹Ø£»1 ¿ª£»2£»ÉÁË¸
 void Relay_leftlight( u8 f_set, u8 f_priority )
 {
 	static OS_ERR err;
-	if( f_set == RELAY_OFF )
+	if(f_set == RELAY_OFF)
 	{
 		OSTmrStop(&TmrLeftLight,OS_OPT_TMR_NONE,0,&err);
 		LEFTLIGHT_OFF;
+		elecmbile_status.L_light_state=RELAY_OFF;
 	}
-	else if( f_set == RELAY_ON )
-	{
-		OSTmrStop(&TmrLeftLight,OS_OPT_TMR_NONE,0,&err);
-		LEFTLIGHT_ON;
-	}
-	else
+	else if(f_set == RELAY_ON)
 	{
 		LEFTLIGHT_ON;
 		OSTmrStart(&TmrLeftLight,&err);
-	}		
+		elecmbile_status.L_light_state=RELAY_ON;
+	}
+	rms_state.left_light=f_set;
 }
+
 //ÓÒ×ªµÆ¼ÌµçÆ÷¿ØÖÆ 0 ¹Ø£»1 ¿ª£»2£»ÉÁË¸
 void Relay_rightlight( u8 f_set, u8 f_priority )
 {
 	static OS_ERR err;
-	if( f_set == RELAY_OFF )
+	if(f_set == RELAY_OFF)
 	{
 		OSTmrStop(&TmrRightLight,OS_OPT_TMR_NONE,0,&err);
 		RIGHTLIGHT_OFF;
+		elecmbile_status.R_light_state=RELAY_OFF;
 	}
-	else if( f_set == RELAY_ON )
-	{
-		OSTmrStop(&TmrRightLight,OS_OPT_TMR_NONE,0,&err);
-		RIGHTLIGHT_ON;
-	}
-	else
+	else if(f_set==RELAY_ON)
 	{
 		RIGHTLIGHT_ON;
 		OSTmrStart(&TmrRightLight,&err);
-	}		
+		elecmbile_status.R_light_state=RELAY_ON;
+	}
+	rms_state.right_light=f_set;
+}
+
+/*µçÔ´Ö¸Ê¾µÆµÄÑÕÉ«*/
+void Set_PowerLED(unsigned char color)
+{
+	unsigned char green=color&0x01;
+	unsigned char red  =(color&0x02)>>1;
+	pPowerLedGreen=green;
+	pPowerLedRed  =red;
 }
 
 //Ñ°¼£¹¦ÄÜµÄ¿ªÆôºÍ¹Ø±Õ
 void Set_Tracking( u8 f_set, u8 f_priority )
 {
-
+	// TODO
 }

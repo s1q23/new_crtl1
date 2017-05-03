@@ -9,33 +9,37 @@
 #define LED3                                     PIout(6)
 #define LED4                                     PIout(7)
 
+
 /**************************************************************************
 继电器（relay）控制管脚配置
 **************************************************************************/
-//预留：PG9,PD7,PD6,PD5 reserve
-#define GPIO_RESERVE_1							GPIOG
-#define GPIO_RESERVE_1_CLOCK				RCC_AHB1Periph_GPIOG
-#define PIN_RESERVE_1								GPIO_Pin_9
-#define RESERVE_1_ON								GPIO_SetBits(GPIO_RESERVE_1, PIN_RESERVE_1);
-#define RESERVE_1_OFF								GPIO_ResetBits(GPIO_RESERVE_1, PIN_RESERVE_1);
+//PG9 强光灯
+#define GPIO_BRINGHTLIGHT							GPIOG
+#define GPIO_BRINGHTLIGHT_CLOCK				RCC_AHB1Periph_GPIOG
+#define PIN_BRINGHTLIGHT								GPIO_Pin_9
+#define BRINGHTLIGHT_ON								GPIO_SetBits(GPIO_BRINGHTLIGHT, PIN_BRINGHTLIGHT);
+#define BRINGHTLIGHT_OFF								GPIO_ResetBits(GPIO_BRINGHTLIGHT, PIN_BRINGHTLIGHT);
 
-#define GPIO_RESERVE_2							GPIOD
-#define GPIO_RESERVE_2_CLOCK				RCC_AHB1Periph_GPIOD
-#define PIN_RESERVE_2								GPIO_Pin_5
-#define RESERVE_2_ON								GPIO_SetBits(GPIO_RESERVE_2, PIN_RESERVE_2);
-#define RESERVE_2_OFF								GPIO_ResetBits(GPIO_RESERVE_2, PIN_RESERVE_2);
+//PD5 静音控制
+#define GPIO_SPEAKERMUTE							GPIOD
+#define GPIO_SPEAKERMUTE_CLOCK				RCC_AHB1Periph_GPIOD
+#define PIN_SPEAKERMUTE								GPIO_Pin_5
+#define SPEAKERMUTE_ON								GPIO_SetBits(GPIO_SPEAKERMUTE, PIN_SPEAKERMUTE);
+#define SPEAKERMUTE_OFF								GPIO_ResetBits(GPIO_SPEAKERMUTE, PIN_SPEAKERMUTE);
 
-#define GPIO_RESERVE_3							GPIOD
-#define GPIO_RESERVE_3_CLOCK				RCC_AHB1Periph_GPIOD
-#define PIN_RESERVE_3								GPIO_Pin_6
-#define RESERVE_3_ON								GPIO_SetBits(GPIO_RESERVE_3, PIN_RESERVE_3);
-#define RESERVE_3_OFF								GPIO_ResetBits(GPIO_RESERVE_3, PIN_RESERVE_3);
+//PD6 导航灯
+#define GPIO_NAVIBRIGHT							GPIOD
+#define GPIO_NAVIBRIGHT_CLOCK				RCC_AHB1Periph_GPIOD
+#define PIN_NAVIBRIGHT							GPIO_Pin_6
+#define NAVIBRIGHT_ON								GPIO_SetBits(GPIO_NAVIBRIGHT, PIN_NAVIBRIGHT);
+#define NAVIBRIGHT_OFF							GPIO_ResetBits(GPIO_NAVIBRIGHT, PIN_NAVIBRIGHT);
 
-#define GPIO_RESERVE_4							GPIOD
-#define GPIO_RESERVE_4_CLOCK				RCC_AHB1Periph_GPIOD
-#define PIN_RESERVE_4								GPIO_Pin_7
-#define RESERVE_4_ON								GPIO_SetBits(GPIO_RESERVE_4, PIN_RESERVE_4);
-#define RESERVE_4_OFF								GPIO_ResetBits(GPIO_RESERVE_4, PIN_RESERVE_4);
+//PD7 烟雾传感器开关控制
+#define GPIO_SMOGSENSOR							GPIOD
+#define GPIO_SMOGSENSOR_CLOCK				RCC_AHB1Periph_GPIOD
+#define PIN_SMOGSENSOR							GPIO_Pin_7
+#define SMOGSENSOR_ON								GPIO_SetBits(GPIO_SMOGSENSOR, PIN_SMOGSENSOR);
+#define SMOGSENSOR_OFF							GPIO_ResetBits(GPIO_SMOGSENSOR, PIN_SMOGSENSOR);
 
 //超声波控制：PD4 ultrasonic	
 #define GPIO_ULTRASONIC							GPIOD
@@ -57,6 +61,7 @@
 #define PIN_Headlight								GPIO_Pin_1
 #define Headlight_ON								GPIO_SetBits(GPIO_HEADLIGHT, PIN_Headlight);
 #define Headlight_OFF								GPIO_ResetBits(GPIO_HEADLIGHT, PIN_Headlight);
+#define HeadLight_TOGGLE            GPIO_ToggleBits(GPIO_HEADLIGHT, PIN_Headlight);
 
 //尾灯控制：PD1 taillight
 #define GPIO_TAILLIGHT							GPIOD
@@ -95,12 +100,12 @@
 #define ALARM_LAMP_ON								GPIO_SetBits(GPIO_ALARM_LAMP, PIN_ALARM_LAMP);
 #define ALARM_LAMP_OFF							GPIO_ResetBits(GPIO_ALARM_LAMP, PIN_ALARM_LAMP);
 
-//探照灯控制：PG14 searchlight
-#define GPIO_SEARCHLIGHT						GPIOG
-#define GPIO_SEARCHLIGHT_CLOCK			RCC_AHB1Periph_GPIOG
-#define PIN_SEARCHLIGHT							GPIO_Pin_14
-#define SEARCHLIGHT_ON							GPIO_SetBits(GPIO_SEARCHLIGHT, PIN_SEARCHLIGHT);
-#define SEARCHLIGHT_OFF							GPIO_ResetBits(GPIO_SEARCHLIGHT, PIN_SEARCHLIGHT);
+//探照灯控制：PG14 INFRAREDLIGHT
+#define GPIO_INFRAREDLIGHT						GPIOG
+#define GPIO_INFRAREDLIGHT_CLOCK			RCC_AHB1Periph_GPIOG
+#define PIN_INFRAREDLIGHT							GPIO_Pin_14
+#define INFRAREDLIGHT_ON							GPIO_SetBits(GPIO_INFRAREDLIGHT, PIN_INFRAREDLIGHT);
+#define INFRAREDLIGHT_OFF							GPIO_ResetBits(GPIO_INFRAREDLIGHT, PIN_INFRAREDLIGHT);
 
 //电源指示灯控制：PG15 power light
 #define GPIO_POWER_LIGHT						GPIOG
@@ -123,6 +128,14 @@
 #define TALKBACK_ON									GPIO_SetBits(GPIO_TALKBACK, PIN_TALKBACK);
 #define TALKBACK_OFF								GPIO_ResetBits(GPIO_TALKBACK, PIN_TALKBACK);
 
+//电源指示灯有红绿两种状体,兼做电量指示灯
+#define GPIO_POWERLED								GPIOD
+#define GPIO_POWERLED_CLOCK					RCC_AHB1Periph_GPIOD
+#define PIN_POWERLED								(GPIO_Pin_10|GPIO_Pin_11)
+#define POWERLED_GREEN							GPIO_SetBits(GPIO_POWERLED, PIN_TALKBACK);
+#define POWERLED_RED								GPIO_ResetBits(GPIO_POWERLED, PIN_TALKBACK);
+#define pPowerLedGreen              PDout(10)
+#define pPowerLedRed                PDout(11)
 
 void LED_Init(void);
 void Config_GPIO_Control_Relay(void);
@@ -137,7 +150,12 @@ void Relay_backlight( u8 f_set, u8 f_priority );
 void Relay_highspeaker( u8 f_set, u8 f_priority );
 void Relay_alarmlight( u8 f_set, u8 f_priority );
 void Set_Tracking( u8 f_set, u8 f_priority );
-void Relay_breaklight( u8 f_set, u8 f_priority );
-void Relay_searchlight( u8 f_set, u8 f_priority );
-
+void Relay_brakelight( u8 f_set, u8 f_priority );
+void Relay_infraredlight( u8 f_set, u8 f_priority );
+void Relay_talkback_module( u8 f_set, u8 f_priority );
+void Relay_brightlight( u8 f_set, u8 f_priority );
+void Relay_infraredlight( u8 f_set, u8 f_priority );
+void Relay_speakermute( u8 f_set, u8 f_priority );
+void Relay_navibright( u8 f_set, u8 f_priority );
+void Set_PowerLED(unsigned char color);
 #endif

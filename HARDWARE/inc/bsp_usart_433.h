@@ -6,8 +6,8 @@
 #include "com_libs.h"
 #include "mj_lib.h"
 
-#define PACKET_433_MAX_LEN      128
-#define RF433_CMD_LED           12
+#define PACKET_433_MAX_LEN      20
+#define RF433_CMD_LEN           12
 /*通用串口接收结构体，没什么用*/
 typedef struct _usart_433_buffer
 {

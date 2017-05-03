@@ -3,6 +3,7 @@
 
 static usart_pc_buffer tx_pc_buf;
 static usart_pc_buffer rx_pc_buf;
+static usart_pc_buffer prx_pc_buf;
 
 
 void usart_pc_init(uint32_t baud) 
@@ -17,18 +18,21 @@ void usart_pc_init(uint32_t baud)
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART5,ENABLE);
  
 	NVIC_InitStructure.NVIC_IRQChannel = UART5_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 	
   /*DMA1 ch4 strem0 和 stream7*/  
 	NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream0_IRQn;// 接收
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 
 	NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream7_IRQn;// 发送
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 	
@@ -114,13 +118,18 @@ void usart_pc_init(uint32_t baud)
 
 usart_pc_buffer *PcCom_get_data()
 {
-	return &rx_pc_buf;
+	return &prx_pc_buf;
 }
 
 volatile static char sendDoneFlag=1;
-void usart_pc_send(char* buffer)
+/******************************************************************
+//将buffer内容通过DMA发送出去
+//如果长度为0的话，会把buffer当做字符串发送，用strlen取其长度
+//否则使用形参传递过来的长度
+*******************************************************************/
+void usart_pc_send(char* buffer,unsigned short length)
 {
-	short length=strlen(buffer);
+	if(length==0) length=strlen(buffer);
 	while(0==sendDoneFlag);
 	sendDoneFlag = 0;
 	memcpy(tx_pc_buf.data,buffer,length);
@@ -140,8 +149,11 @@ void UART5_IRQHandler(void)
 		USART_ClearITPendingBit(UART5, USART_IT_IDLE);//空闲
 		USART_ReceiveData(UART5);                     //空读清状态
 		DMA_Cmd(DMA1_Stream0,DISABLE);
+		DMA_ClearFlag(DMA1_Stream0,DMA_FLAG_TCIF0);   //清除DMA标记位
 		/*发送信号量给其他任务*/
 		rx_pc_buf.len=PACKET_PC_MAX_LEN-DMA1_Stream0->NDTR;
+		memcpy(&prx_pc_buf,&rx_pc_buf.data,PACKET_PC_MAX_LEN);
+		memset(rx_pc_buf.data,0,PACKET_PC_MAX_LEN);
 		OSFlagPost(&IRQ_EVENTs,EVENTS_PC_CMD,OS_OPT_POST_FLAG_SET,&err);	
 		DMA1_Stream0->M0AR = (uint32_t)rx_pc_buf.data;
 		DMA1_Stream0->NDTR=PACKET_PC_MAX_LEN;

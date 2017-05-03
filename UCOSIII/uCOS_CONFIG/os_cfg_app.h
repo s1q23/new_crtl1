@@ -40,8 +40,8 @@
 */
 
                                                             /* --------------------- MISCELLANEOUS ------------------ */
-#define  OS_CFG_MSG_POOL_SIZE            100u               /* Maximum number of messages                             */
-#define  OS_CFG_ISR_STK_SIZE             128u               /* Stack size of ISR stack (number of CPU_STK elements)   */
+#define  OS_CFG_MSG_POOL_SIZE             10u               /* Maximum number of messages                             */
+#define  OS_CFG_ISR_STK_SIZE             256u               /* Stack size of ISR stack (number of CPU_STK elements)   */
 #define  OS_CFG_TASK_STK_LIMIT_PCT_EMPTY  10u               /* Stack limit position in percentage to empty            */
 
 
@@ -50,12 +50,12 @@
 
 
                                                             /* ------------------ ISR HANDLER TASK ------------------ */
-#define  OS_CFG_INT_Q_SIZE                10u               /* Size of ISR handler task queue                         */
+#define  OS_CFG_INT_Q_SIZE                20u               /* Size of ISR handler task queue                         */
 #define  OS_CFG_INT_Q_TASK_STK_SIZE      128u               /* Stack size (number of CPU_STK elements)                */
 
                                                             /* ------------------- STATISTIC TASK ------------------- */
 #define  OS_CFG_STAT_TASK_PRIO  	(OS_CFG_PRIO_MAX-2u)   	/* Priority 统计任务优先级                                 */
-#define  OS_CFG_STAT_TASK_RATE_HZ         10u               /* Rate of execution (1 to 10 Hz)                         */
+#define  OS_CFG_STAT_TASK_RATE_HZ          1u               /* Rate of execution (1 to 10 Hz)                         */
 #define  OS_CFG_STAT_TASK_STK_SIZE       128u               /* Stack size (number of CPU_STK elements)                */
 
 
@@ -67,9 +67,9 @@
 
 
                                                             /* ----------------------- TIMERS ----------------------- */
-#define  OS_CFG_TMR_TASK_PRIO      (OS_CFG_PRIO_MAX-4)      /* Priority of 'Timer Task' 定时任务优先级，很低				  */
+#define  OS_CFG_TMR_TASK_PRIO    (OS_CFG_PRIO_MAX-9u)       /* Priority of 'Timer Task' 定时任务优先级，很低				  */
 #define  OS_CFG_TMR_TASK_RATE_HZ         100u               /* Rate for timers (100 Hz Typ.)                          */
-#define  OS_CFG_TMR_TASK_STK_SIZE        128u               /* Stack size (number of CPU_STK elements)                */
+#define  OS_CFG_TMR_TASK_STK_SIZE        256u               /* Stack size (number of CPU_STK elements)                */
 #define  OS_CFG_TMR_WHEEL_SIZE            17u               /* Number of 'spokes' in timer wheel; SHOULD be prime     */
 
 #endif

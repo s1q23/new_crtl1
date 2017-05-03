@@ -105,11 +105,11 @@ typedef struct{
 }ipc_control_t1;
 typedef enum 
 {
-	HANDLER_OK,					    // 处理ok
+	HANDLER_OK = 0,					    // 处理ok
 	HANDLER_ERROR,				  // 出错
 	HANDLER_REPLY,				  // 需要回复
 	HANDLER_NOT_REPLY,			// 不需要回复
-}handler_result_t ;
+}handler_result_t;
 
 typedef enum 
 {

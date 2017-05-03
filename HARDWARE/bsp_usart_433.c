@@ -2,6 +2,7 @@
 
 static usart_433_buffer tx_433_buf;
 static usart_433_buffer rx_433_buf;
+static usart_433_buffer prx_433_buf;
 
 //usart3 DMA收发   (DMA1-stream1-channel4,usart3-rx);(DMA1-stream3-channel4,usart3-tx);(PB10,usart3-tx);(PB11,usart3-rx)
 void usart_433_init(uint32_t baud) 
@@ -22,11 +23,13 @@ void usart_433_init(uint32_t baud)
 	
   /*DMA1 ch4 strem1(Rx) 和 stream3(Tx)*/  
 	NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream1_IRQn;// 接收
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 
 	NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream3_IRQn;// 发送
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
@@ -62,12 +65,12 @@ void usart_433_init(uint32_t baud)
 	DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)(&USART3->DR);  
 	DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)rx_433_buf.data;  
 	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;  
-	DMA_InitStructure.DMA_BufferSize = 128;  
+	DMA_InitStructure.DMA_BufferSize = 20;  
 	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;  
 	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;  
 	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;  
 	DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;  
-	DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;  
+	DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;//DMA_Mode_Circular;// DMA_Mode_Normal;  
 	DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;  
 	DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable;      
 	DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_HalfFull;          
@@ -112,7 +115,7 @@ void usart_433_init(uint32_t baud)
 
 usart_433_buffer * Rf433_get_data()
 {
-	return &rx_433_buf;
+	return &prx_433_buf;
 }
 
 volatile static char sendDoneFlag=1;
@@ -146,12 +149,14 @@ void USART3_IRQHandler(void)
 	if(USART_GetITStatus(USART3, USART_IT_IDLE) != RESET)
 	{
 		USART_ClearITPendingBit(USART3, USART_IT_IDLE);//空闲
-		USART_ReceiveData(USART3);                     //空读清状态
+		USART_ReceiveData(USART3);                     //读清状态
 		DMA_Cmd(DMA1_Stream1,DISABLE);
+		DMA_ClearFlag(DMA1_Stream1,DMA_FLAG_TCIF1);    //这句有用吗？ 有！
 		/*发送信号量给其他任务*/
 		rx_433_buf.len=PACKET_433_MAX_LEN-DMA1_Stream1->NDTR;
-		
-		OSFlagPost(&IRQ_EVENTs,EVENTS_RF433_CMD,OS_OPT_POST_FLAG_SET,&err);		
+		memcpy(prx_433_buf.data,rx_433_buf.data,PACKET_433_MAX_LEN);
+		OSFlagPost(&IRQ_EVENTs,EVENTS_RF433_CMD,OS_OPT_POST_FLAG_SET,&err);	
+		memset(&rx_433_buf,0,sizeof(rx_433_buf));
 		DMA1_Stream1->M0AR = (uint32_t)rx_433_buf.data;
 		DMA1_Stream1->NDTR=PACKET_433_MAX_LEN;
 		DMA_Cmd(DMA1_Stream1,ENABLE);                  //打开接收

@@ -1,6 +1,5 @@
 #include "bsp_adc.h"
 
-
 uint16_t adc_buff[SIZE_OF_FILTER][NUMBER_OF_ADC];//前者adc类型   后者取样个数
 volatile adc_value_t adc_value = {0}; 
 
@@ -55,7 +54,7 @@ void Config_ADC1_DMA()
 	//DMA2 Stream 0 global Interrupt 
 	NVIC_InitStructure.NVIC_IRQChannel = DMA2_Stream0_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 6;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 3;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
 	NVIC_Init(&NVIC_InitStructure);
 	DMA_ITConfig( DMA2_Stream0, DMA_IT_TC, ENABLE );
@@ -123,28 +122,29 @@ void Config_ADC1_DMA()
 // adc filter,中位值平均滤波
 void DMA2_Stream0_IRQHandler_ADC1() //存储的时候是连续存  a[0][1]   a[0][2]    a[0][3]
 {
-	u32 adc_no, i, j, sum;
-	u16 tmp;
+	u32 adc_no, i, sum;
+//	u16 tmp;u32 j;
 
 	for ( adc_no = 0; adc_no < NUMBER_OF_ADC; adc_no++) 
 	{
-		for (i = 0; i < SIZE_OF_FILTER; i++) 
-		{
-			for ( j = 0; j < SIZE_OF_FILTER - i ; j++) 
-			{
-				if ( adc_buff[j][adc_no] > adc_buff[j+1][adc_no]) 
-				{
-					tmp = adc_buff[j][adc_no];
-					adc_buff[j][adc_no] = adc_buff[j+1][adc_no];
-					adc_buff[j+1][adc_no] = tmp;
-				}
-			}
-		}
+	/*排序先去掉，如果数据的抖动较大，再加上排序，节省任务处理时间*/	
+//		for (i = 0; i < SIZE_OF_FILTER; i++) 
+//		{
+//			for ( j = 0; j < SIZE_OF_FILTER - i ; j++) 
+//			{
+//				if ( adc_buff[j][adc_no] > adc_buff[j+1][adc_no]) 
+//				{
+//					tmp = adc_buff[j][adc_no];
+//					adc_buff[j][adc_no] = adc_buff[j+1][adc_no];
+//					adc_buff[j+1][adc_no] = tmp;
+//				}
+//			}
+//		}
 		// 算平均值
-		for ( i = 1, sum = 0 ; i < SIZE_OF_FILTER - 1; i++) {  //去掉中间两个
+		for ( i = 0, sum = 0 ; i < SIZE_OF_FILTER; i++) {  //去掉中间两个
 			sum += adc_buff[i][adc_no];
 		}
-		sum = sum / (SIZE_OF_FILTER - 2);//取中间的八个数值，去掉头尾
+		sum = sum / (SIZE_OF_FILTER);//取中间的八个数值，去掉头尾
 		if (adc_no == 0)
 			adc_value.M = sum;
 		else if (adc_no == 1)
@@ -178,9 +178,12 @@ void DMA2_Stream0_IRQHandler_ADC1() //存储的时候是连续存  a[0][1]   a[0][2]    a
 
 void DMA2_Stream0_IRQHandler(void)  //adc  dma处理结果平均值滤波
 {
+	static OS_ERR err;
+	OSIntEnter(); 
 	if(DMA_GetITStatus( DMA2_Stream0, DMA_IT_TCIF0 ) != RESET) 
 	{
-		//发送信号量给其他线程
+		OSFlagPost(&IRQ_EVENTs,EVENTS_DMA_CVTOK,OS_OPT_POST_FLAG_SET,&err);	
 		DMA_ClearITPendingBit( DMA2_Stream0, DMA_IT_TCIF0 );
 	}
+	OSIntExit(); 
 }

@@ -15,7 +15,7 @@ void HardFault_Handler(void)
 {
   while (1)
   {
-		LED4=!LED4;
+//		LED4=!LED4;
 		mj_delay(0xFFFFFF);
   }
 }
@@ -24,7 +24,7 @@ void MemManage_Handler(void)
 {
   while (1)
   {
-		LED4=!LED4;
+//		LED4=!LED4;
 		mj_delay(0xFFFFFF);		
   }
 }
@@ -33,7 +33,7 @@ void BusFault_Handler(void)
 {
   while (1)
   {
-		LED4=!LED4;
+//		LED4=!LED4;
 		mj_delay(0xFFFFFF);
   }
 }
@@ -43,7 +43,7 @@ void UsageFault_Handler(void)
   /* Go to infinite loop when Usage Fault exception occurs */
   while (1)
   {
-		LED4=!LED4;
+//		LED4=!LED4;
 		mj_delay(0xFFFFFF);		
   }
 }

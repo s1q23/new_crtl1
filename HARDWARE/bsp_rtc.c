@@ -1,5 +1,6 @@
 #include "bsp_rtc.h"
 
+//这个是RTC时钟的值，初始化的时候配置
 STR_SET_TIME  SET_TIME={0x17,0x03,0x15,0x03,0x13,0x17,0x00};
 
 void Config_RTC()
@@ -11,7 +12,7 @@ void Config_RTC()
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR,ENABLE);
 	PWR_BackupAccessCmd(ENABLE);/*使能后备寄存器访问*/
 
-	if(RTC_ReadBackupRegister(RTC_BKP_DR0) != 0xA0A2)
+	if(RTC_ReadBackupRegister(RTC_BKP_DR0) != RTC_CHECK_VALUE)
 	{
 		RCC_LSEConfig(RCC_LSE_ON);/*使能LSE振荡器*/
 		while(RCC_GetFlagStatus(RCC_FLAG_LSERDY) == RESET);/*等待就绪*/
@@ -37,9 +38,11 @@ void Config_RTC()
 		RTC_TimeStructure.RTC_Seconds = SET_TIME.second;
 		RTC_SetTime(RTC_Format_BCD,&RTC_TimeStructure);
 		/*配置备份寄存器，表示已经设置过RTC*/
-		RTC_WriteBackupRegister(RTC_BKP_DR0,0xA0A2);
+		RTC_WriteBackupRegister(RTC_BKP_DR0,RTC_CHECK_VALUE);
 	}
 }
+
+
 
 //设置闹钟时间(按星期闹铃,24小时制)
 //week:星期几(1~7) @ref  RTC_Alarm_Definitions
@@ -134,4 +137,13 @@ void RTC_Alarm_IRQHandler(void)
 		RTC_ClearFlag(RTC_FLAG_ALRAF);//清除中断标志
 	}   
 	EXTI_ClearITPendingBit(EXTI_Line17);	//清除中断线17的中断标志 											 
+}
+//这个函数是唤醒中断，通常配置为1s一次
+void RTC_WKUP_IRQHandler(void)
+{    
+	if(RTC_GetFlagStatus(RTC_FLAG_WUTF)==SET)//WK_UP中断?
+	{ 
+		RTC_ClearFlag(RTC_FLAG_WUTF);	//清除中断标志
+	} 
+	EXTI_ClearITPendingBit(EXTI_Line22);//清除中断线22的中断标志 								
 }
